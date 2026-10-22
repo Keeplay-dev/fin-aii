@@ -122,7 +122,7 @@ export const DropzonePDF: React.FC<DropzonePDFProps> = ({ onPDFParsed }) => {
   };
 
   return (
-    <div className="no-print card" style={{ marginBottom: 24, padding: '20px 24px' }}>
+    <div className="no-print glass-panel" style={{ marginBottom: 24, padding: 'clamp(16px, 3vw, 24px)' }}>
       {/* Abas Superiores de Seleção de Entrada */}
       <div style={{
         display: 'flex',
@@ -134,7 +134,7 @@ export const DropzonePDF: React.FC<DropzonePDFProps> = ({ onPDFParsed }) => {
         paddingBottom: 14,
         marginBottom: 18
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <button
             onClick={() => setActiveTab('upload')}
             className="btn btn-sm"

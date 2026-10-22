@@ -67,9 +67,9 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ metrics, trans
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-      gap: 20,
-      marginBottom: 28
+      gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
+      gap: 18,
+      marginBottom: 24
     }}>
       {/* Gráfico 1: Distribuição por Categoria (Donut SVG) */}
       <div className="glass-panel" style={{
@@ -272,16 +272,17 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ metrics, trans
             Carregue um extrato para visualizar os dias com maiores saídas financeiras.
           </div>
         ) : (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-            {/* Gráfico de barras verticais para os dias */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'flex-end',
-              gap: 3,
-              height: 140,
-              paddingBottom: 8,
-              borderBottom: '1px solid #E2E8F0'
-            }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <div style={{ minWidth: 260, width: '100%' }}>
+              {/* Gráfico de barras verticais para os dias */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'flex-end',
+                gap: 2,
+                height: 140,
+                paddingBottom: 8,
+                borderBottom: '1px solid #E2E8F0'
+              }}>
               {daysInMonth.map((day) => {
                 const amount = dailySpendMap[day] || 0;
                 const heightPercent = maxDaySpend > 0 ? (amount / maxDaySpend) * 100 : 0;
@@ -333,6 +334,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ metrics, trans
               <span>Dia 31</span>
             </div>
           </div>
+        </div>
         )}
       </div>
     </div>

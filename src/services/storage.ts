@@ -55,10 +55,12 @@ export async function syncTransactionsWithTiDB(userId: number, transactions: Tra
 export async function fetchUserTransactionsFromTiDB(userId: number): Promise<Transaction[] | null> {
   if (!userId) return null;
   try {
-    const res = await fetch(`/api/transactions?userId=${userId}`);
+    const res = await fetch(`/api/transactions?userId=${userId}&_t=${Date.now()}`, {
+      cache: 'no-store'
+    });
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         saveStoredTransactions(data);
         return data;
       }
@@ -67,6 +69,31 @@ export async function fetchUserTransactionsFromTiDB(userId: number): Promise<Tra
     console.warn('Não foi possível carregar do TiDB remoto:', e);
   }
   return null;
+}
+
+export async function updateTransactionCategoryInTiDB(
+  userId: number,
+  transactionId: string,
+  category: CategoryId,
+  merchantPattern?: string,
+  aiReason?: string
+): Promise<void> {
+  if (!userId || !transactionId) return;
+  try {
+    await fetch('/api/transactions', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId,
+        id: transactionId,
+        category,
+        merchantPattern,
+        aiReason
+      })
+    });
+  } catch (e) {
+    console.warn('Falha ao atualizar categoria no TiDB:', e);
+  }
 }
 
 export async function deleteTransactionFromTiDB(userId: number, transactionId: string): Promise<void> {
@@ -98,6 +125,25 @@ export async function syncSalaryWithTiDB(userId: number, salary: number): Promis
   } catch (e) {
     console.warn('Falha ao sincronizar salário no TiDB:', e);
   }
+}
+
+export async function fetchUserSalaryFromTiDB(userId: number): Promise<number | null> {
+  if (!userId) return null;
+  try {
+    const res = await fetch(`/api/salary?userId=${userId}&_t=${Date.now()}`, {
+      cache: 'no-store'
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data.salary === 'number') {
+        saveStoredSalary(data.salary);
+        return data.salary;
+      }
+    }
+  } catch (e) {
+    console.warn('Falha ao carregar salário remoto do TiDB:', e);
+  }
+  return null;
 }
 
 // Funções de compatibilidade para evitar quebras de build caso o arquivo antigo exista no GitHub

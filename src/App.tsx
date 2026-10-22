@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Transaction, CategoryId, ParsedPDFResult } from './types/finance';
 import type { User } from './types/auth';
 import {
@@ -11,7 +11,9 @@ import {
   fetchUserTransactionsFromTiDB,
   deleteTransactionFromTiDB,
   clearAllTransactionsFromTiDB,
-  syncSalaryWithTiDB
+  syncSalaryWithTiDB,
+  fetchUserSalaryFromTiDB,
+  updateTransactionCategoryInTiDB
 } from './services/storage';
 import { saveLearnedRule, generateAIInsights, reclassifyAllTransactions } from './services/aiEngine';
 import { getMockTransactions } from './services/mockData';
@@ -49,10 +51,51 @@ export const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(() => getStoredUser());
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [isPDFModalOpen, setIsPDFModalOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+
+  // Flag para evitar que atualizações recebidas da nuvem sejam reenviadas em loop
+  const isRemoteUpdateRef = useRef<boolean>(false);
 
   const handleLogout = () => {
     clearUserSession();
     setCurrentUser(null);
+  };
+
+  // Função central de sincronização com o TiDB Cloud
+  const refreshData = async (silent = false) => {
+    if (!currentUser?.id) return;
+    if (!silent) setIsSyncing(true);
+
+    try {
+      const [remoteTx, remoteSalary] = await Promise.all([
+        fetchUserTransactionsFromTiDB(currentUser.id),
+        fetchUserSalaryFromTiDB(currentUser.id)
+      ]);
+
+      if (remoteTx !== null) {
+        setTransactions(prev => {
+          // Só atualiza o estado se houver diferença real para não disparar re-render à toa
+          if (JSON.stringify(prev) !== JSON.stringify(remoteTx)) {
+            isRemoteUpdateRef.current = true;
+            return remoteTx;
+          }
+          return prev;
+        });
+      }
+
+      if (typeof remoteSalary === 'number') {
+        setSalary(prev => (prev !== remoteSalary ? remoteSalary : prev));
+      }
+
+      setLastSyncTime(new Date());
+    } catch (err) {
+      console.warn('Falha na sincronização com TiDB:', err);
+    } finally {
+      if (!silent) {
+        setTimeout(() => setIsSyncing(false), 300);
+      }
+    }
   };
 
   // Carregar dados remotos do TiDB quando o usuário estiver logado
@@ -61,12 +104,37 @@ export const App: React.FC = () => {
       if (currentUser.salary) {
         setSalary(currentUser.salary);
       }
-      fetchUserTransactionsFromTiDB(currentUser.id).then(remoteTx => {
-        if (remoteTx && remoteTx.length > 0) {
-          setTransactions(remoteTx);
-        }
-      });
+      refreshData(false);
     }
+  }, [currentUser?.id]);
+
+  // Sincronização automática contínua em tempo real (multi-dispositivo: PC e Celular)
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    // 1. Ao voltar para a aba ou desbloquear a tela do celular
+    const handleFocus = () => refreshData(true);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshData(true);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // 2. Polling silencioso a cada 8 segundos quando o app estiver aberto na tela
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refreshData(true);
+      }
+    }, 8000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(interval);
+    };
   }, [currentUser?.id]);
 
   // Sincronizar salário com o localStorage e TiDB
@@ -78,8 +146,12 @@ export const App: React.FC = () => {
     }
   };
 
-  // Sincronizar transações com o localStorage e TiDB Cloud
+  // Sincronizar transações locais com o localStorage e TiDB Cloud
   useEffect(() => {
+    if (isRemoteUpdateRef.current) {
+      isRemoteUpdateRef.current = false;
+      return;
+    }
     saveStoredTransactions(transactions);
     if (currentUser?.id && transactions.length > 0) {
       syncTransactionsWithTiDB(currentUser.id, transactions);
@@ -124,8 +196,13 @@ export const App: React.FC = () => {
       })
     );
 
-    // Salva regra de aprendizado
+    // Salva regra de aprendizado local
     saveLearnedRule(description, newCategory);
+
+    // Atualiza imediatamente no TiDB
+    if (currentUser?.id) {
+      updateTransactionCategoryInTiDB(currentUser.id, transactionId, newCategory, description, 'Atualizado manualmente por você');
+    }
   };
 
   // Excluir uma transação
@@ -160,6 +237,9 @@ export const App: React.FC = () => {
         hasData={transactions.length > 0}
         currentUser={currentUser}
         onLogout={handleLogout}
+        onSync={() => refreshData(false)}
+        isSyncing={isSyncing}
+        lastSyncTime={lastSyncTime}
       />
 
       {/* Main Content Area */}

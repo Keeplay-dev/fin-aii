@@ -41,7 +41,7 @@ export const SalaryCard: React.FC<SalaryCardProps> = ({ metrics, onUpdateSalary 
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
       gap: 16,
       marginBottom: 24
     }}>
@@ -120,7 +120,7 @@ export const SalaryCard: React.FC<SalaryCardProps> = ({ metrics, onUpdateSalary 
           </div>
         ) : (
           <div>
-            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1E3A8A', letterSpacing: '-0.02em' }}>
+            <div style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', fontWeight: 800, color: '#1E3A8A', letterSpacing: '-0.02em', wordBreak: 'break-word' }}>
               {formatBRL(metrics.salary)}
             </div>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 4 }}>
@@ -170,7 +170,7 @@ export const SalaryCard: React.FC<SalaryCardProps> = ({ metrics, onUpdateSalary 
           </span>
         </div>
 
-        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#B91C1C', letterSpacing: '-0.02em' }}>
+        <div style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', fontWeight: 800, color: '#B91C1C', letterSpacing: '-0.02em', wordBreak: 'break-word' }}>
           {formatBRL(metrics.totalExpenses)}
         </div>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 4 }}>
@@ -252,10 +252,11 @@ export const SalaryCard: React.FC<SalaryCardProps> = ({ metrics, onUpdateSalary 
         </div>
 
         <div style={{
-          fontSize: '2.1rem',
+          fontSize: 'clamp(1.5rem, 5vw, 2.1rem)',
           fontWeight: 800,
           color: isPositive ? '#065F46' : '#991B1B',
-          letterSpacing: '-0.02em'
+          letterSpacing: '-0.02em',
+          wordBreak: 'break-word'
         }}>
           {formatBRL(metrics.remainingSalary)}
         </div>

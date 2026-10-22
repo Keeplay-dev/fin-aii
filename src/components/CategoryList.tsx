@@ -98,8 +98,8 @@ export const CategoryList: React.FC<CategoryListProps> = ({
           </div>
         </div>
 
-        {/* Filtros rápidos tipo pílula */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        {/* Filtros rápidos tipo pílula com rolagem horizontal touch */}
+        <div className="pills-scroll" style={{ width: '100%', maxWidth: '100%' }}>
           <button
             onClick={() => setActiveFilter('all')}
             style={{
@@ -111,7 +111,9 @@ export const CategoryList: React.FC<CategoryListProps> = ({
               cursor: 'pointer',
               backgroundColor: activeFilter === 'all' ? '#2563EB' : '#EFF6FF',
               color: activeFilter === 'all' ? '#FFFFFF' : '#1E40AF',
-              transition: 'all 0.15s ease'
+              transition: 'all 0.15s ease',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
             }}
           >
             Todas ({transactions.length})
@@ -134,7 +136,9 @@ export const CategoryList: React.FC<CategoryListProps> = ({
                   cursor: 'pointer',
                   backgroundColor: isSelected ? cat.color : '#FFFFFF',
                   color: isSelected ? '#FFFFFF' : '#475569',
-                  transition: 'all 0.15s ease'
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
                 }}
               >
                 {cat.name.split('&')[0].trim()} {count > 0 && `(${count})`}

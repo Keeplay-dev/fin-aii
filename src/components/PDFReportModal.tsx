@@ -52,7 +52,7 @@ export const PDFReportModal: React.FC<PDFReportModalProps> = ({
         width: '100%',
         maxHeight: '92vh',
         overflowY: 'auto',
-        padding: 28,
+        padding: 'clamp(16px, 3vw, 28px)',
         position: 'relative',
         backgroundColor: '#FFFFFF',
         borderColor: 'var(--border-pastel-blue)'
@@ -64,7 +64,9 @@ export const PDFReportModal: React.FC<PDFReportModalProps> = ({
           justifyContent: 'space-between',
           borderBottom: '1px solid var(--border-subtle)',
           paddingBottom: 14,
-          marginBottom: 20
+          marginBottom: 20,
+          flexWrap: 'wrap',
+          gap: 10
         }}>
           <div>
             <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
@@ -95,13 +97,15 @@ export const PDFReportModal: React.FC<PDFReportModalProps> = ({
             justifyContent: 'space-between',
             borderBottom: '2px solid #BFDBFE',
             paddingBottom: 14,
-            marginBottom: 20
+            marginBottom: 20,
+            flexWrap: 'wrap',
+            gap: 10
           }}>
             <div>
-              <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1E40AF' }}>
+              <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1E40AF' }}>
                 FinAI - Relatório Financeiro
               </h1>
-              <p style={{ fontSize: '0.875rem', color: '#475569' }}>
+              <p style={{ fontSize: '0.85rem', color: '#475569' }}>
                 Gestão Financeira & Análise Inteligente
               </p>
             </div>
@@ -114,8 +118,8 @@ export const PDFReportModal: React.FC<PDFReportModalProps> = ({
           {/* Resumo Executivo (KPIs) */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 14,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))',
+            gap: 12,
             marginBottom: 24
           }}>
             <div style={{
@@ -182,41 +186,43 @@ export const PDFReportModal: React.FC<PDFReportModalProps> = ({
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1E3A8A', marginBottom: 10 }}>
               Resumo por Categorias de Gasto
             </h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.825rem' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#F1F5F9', borderBottom: '2px solid #CBD5E1' }}>
-                  <th style={{ textAlign: 'left', padding: '8px 10px', color: '#334155' }}>Categoria</th>
-                  <th style={{ textAlign: 'right', padding: '8px 10px', color: '#334155' }}>Total Gasto (R$)</th>
-                  <th style={{ textAlign: 'right', padding: '8px 10px', color: '#334155' }}>% dos Gastos</th>
-                  <th style={{ textAlign: 'right', padding: '8px 10px', color: '#334155' }}>% do Salário</th>
-                </tr>
-              </thead>
-              <tbody>
-                {CATEGORY_LIST.map((cat) => {
-                  const val = metrics.categoryTotals[cat.id] || 0;
-                  const pctExp = metrics.totalExpenses > 0 ? (val / metrics.totalExpenses) * 100 : 0;
-                  const pctSal = metrics.salary > 0 ? (val / metrics.salary) * 100 : 0;
-                  if (val === 0) return null;
+            <div className="table-responsive">
+              <table style={{ width: '100%', minWidth: 320, borderCollapse: 'collapse', fontSize: '0.825rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#F1F5F9', borderBottom: '2px solid #CBD5E1' }}>
+                    <th style={{ textAlign: 'left', padding: '8px 10px', color: '#334155' }}>Categoria</th>
+                    <th style={{ textAlign: 'right', padding: '8px 10px', color: '#334155' }}>Total Gasto (R$)</th>
+                    <th style={{ textAlign: 'right', padding: '8px 10px', color: '#334155' }}>% dos Gastos</th>
+                    <th style={{ textAlign: 'right', padding: '8px 10px', color: '#334155' }}>% do Salário</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {CATEGORY_LIST.map((cat) => {
+                    const val = metrics.categoryTotals[cat.id] || 0;
+                    const pctExp = metrics.totalExpenses > 0 ? (val / metrics.totalExpenses) * 100 : 0;
+                    const pctSal = metrics.salary > 0 ? (val / metrics.salary) * 100 : 0;
+                    if (val === 0) return null;
 
-                  return (
-                    <tr key={cat.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
-                      <td style={{ padding: '8px 10px', fontWeight: 600, color: '#1E293B' }}>
-                        {cat.name}
-                      </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>
-                        {formatBRL(val)}
-                      </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', color: '#64748B' }}>
-                        {pctExp.toFixed(1)}%
-                      </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', color: '#64748B' }}>
-                        {pctSal.toFixed(1)}%
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <tr key={cat.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
+                        <td style={{ padding: '8px 10px', fontWeight: 600, color: '#1E293B' }}>
+                          {cat.name}
+                        </td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>
+                          {formatBRL(val)}
+                        </td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', color: '#64748B' }}>
+                          {pctExp.toFixed(1)}%
+                        </td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', color: '#64748B' }}>
+                          {pctSal.toFixed(1)}%
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Tabela de Lançamentos Detalhados com Nome do Estabelecimento */}
@@ -227,34 +233,36 @@ export const PDFReportModal: React.FC<PDFReportModalProps> = ({
             {transactions.length === 0 ? (
               <p style={{ color: '#64748B', fontSize: '0.85rem' }}>Nenhuma transação registrada neste mês.</p>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.785rem' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#F1F5F9', borderBottom: '2px solid #CBD5E1' }}>
-                    <th style={{ textAlign: 'left', padding: '6px 8px', color: '#334155' }}>Data / Dia</th>
-                    <th style={{ textAlign: 'left', padding: '6px 8px', color: '#334155' }}>Estabelecimento</th>
-                    <th style={{ textAlign: 'left', padding: '6px 8px', color: '#334155' }}>Categoria</th>
-                    <th style={{ textAlign: 'right', padding: '6px 8px', color: '#334155' }}>Valor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.map((tx) => (
-                    <tr key={tx.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '6px 8px', color: '#475569' }}>
-                        <strong>{tx.dateDisplay}</strong> ({tx.dayOfWeek.split('-')[0]})
-                      </td>
-                      <td style={{ padding: '6px 8px', color: '#0F172A', fontWeight: 600 }}>
-                        {tx.merchantName || tx.description}
-                      </td>
-                      <td style={{ padding: '6px 8px', color: '#475569' }}>
-                        {CATEGORIES[tx.category]?.name.split('&')[0].trim() || tx.category}
-                      </td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#0F172A' }}>
-                        {formatBRL(tx.amount)}
-                      </td>
+              <div className="table-responsive">
+                <table style={{ width: '100%', minWidth: 340, borderCollapse: 'collapse', fontSize: '0.785rem' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#F1F5F9', borderBottom: '2px solid #CBD5E1' }}>
+                      <th style={{ textAlign: 'left', padding: '6px 8px', color: '#334155' }}>Data / Dia</th>
+                      <th style={{ textAlign: 'left', padding: '6px 8px', color: '#334155' }}>Estabelecimento</th>
+                      <th style={{ textAlign: 'left', padding: '6px 8px', color: '#334155' }}>Categoria</th>
+                      <th style={{ textAlign: 'right', padding: '6px 8px', color: '#334155' }}>Valor</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {transactions.map((tx) => (
+                      <tr key={tx.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <td style={{ padding: '6px 8px', color: '#475569' }}>
+                          <strong>{tx.dateDisplay}</strong> ({tx.dayOfWeek.split('-')[0]})
+                        </td>
+                        <td style={{ padding: '6px 8px', color: '#0F172A', fontWeight: 600 }}>
+                          {tx.merchantName || tx.description}
+                        </td>
+                        <td style={{ padding: '6px 8px', color: '#475569' }}>
+                          {CATEGORIES[tx.category]?.name.split('&')[0].trim() || tx.category}
+                        </td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#0F172A' }}>
+                          {formatBRL(tx.amount)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>

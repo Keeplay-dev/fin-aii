@@ -107,40 +107,43 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
       <div
         onClick={() => setIsExpanded(!isExpanded)}
         style={{
-          padding: '18px 20px',
+          padding: '16px 18px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           cursor: 'pointer',
           backgroundColor: isExpanded ? '#F8FAFD' : '#FFFFFF',
           transition: 'background-color 0.2s ease',
-          userSelect: 'none'
+          userSelect: 'none',
+          flexWrap: 'wrap',
+          gap: 12
         }}
       >
         {/* Esquerda: Ícone + Título + Descrição */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: '1 1 240px', minWidth: 0 }}>
           <div style={{
-            width: 46,
-            height: 46,
+            width: 42,
+            height: 42,
             borderRadius: 12,
             backgroundColor: category.accentBg,
             border: `1px solid ${category.color}40`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: `0 2px 8px ${category.color}25`
+            boxShadow: `0 2px 8px ${category.color}25`,
+            flexShrink: 0
           }}>
             {renderIcon(categoryId)}
           </div>
 
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 {category.name}
               </h3>
               <span style={{
-                fontSize: '0.725rem',
-                padding: '2px 8px',
+                fontSize: '0.7rem',
+                padding: '2px 7px',
                 borderRadius: 9999,
                 backgroundColor: 'var(--bg-pastel-blue)',
                 border: '1px solid var(--border-pastel-blue)',
@@ -150,11 +153,11 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
                 {transactions.length} {transactions.length === 1 ? 'item' : 'itens'}
               </span>
             </div>
-            <p style={{ fontSize: '0.785rem', color: 'var(--text-secondary)', marginTop: 2 }}>
+            <p style={{ fontSize: '0.775rem', color: 'var(--text-secondary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {category.description}
             </p>
             {distinctMerchants.length > 0 && (
-              <div style={{ fontSize: '0.735rem', color: '#475569', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ fontSize: '0.725rem', color: '#475569', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Principais:</span>
                 <span style={{ color: '#1E40AF', fontWeight: 600 }}>
                   {distinctMerchants.join(' • ')}{transactions.length > 3 ? '...' : ''}
@@ -165,19 +168,19 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
         </div>
 
         {/* Direita: Total Gasto + Percentuais + Botão Expandir */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginLeft: 'auto' }}>
           <div style={{ textAlign: 'right' }}>
             <div style={{
-              fontSize: '1.25rem',
+              fontSize: '1.2rem',
               fontWeight: 800,
               color: categoryTotal > 0 ? '#0F172A' : 'var(--text-muted)'
             }}>
               {formatBRL(categoryTotal)}
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)', display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <span>{percentOfExpenses.toFixed(1)}% dos gastos</span>
               {totalSalary > 0 && (
-                <span>• {percentOfSalary.toFixed(1)}% do salário</span>
+                <span className="hide-on-mobile">• {percentOfSalary.toFixed(1)}% do salário</span>
               )}
             </div>
           </div>
@@ -192,7 +195,8 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'transform 0.25s ease',
-            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'
+            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+            flexShrink: 0
           }}>
             <ChevronDown size={18} color="#2563EB" />
           </div>
@@ -204,7 +208,7 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
         <div style={{
           borderTop: '1px solid var(--border-pastel-blue)',
           backgroundColor: '#F8FAFD',
-          padding: '16px 20px',
+          padding: '14px 16px',
           animation: 'fadeIn 0.25s ease-out'
         }}>
           {/* Barra de Busca dentro da categoria */}
@@ -236,59 +240,55 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {filteredTransactions.map((tx) => (
-                <div
-                  key={tx.id}
-                  style={{
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid var(--border-pastel-blue)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '12px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: 12,
-                    boxShadow: '0 2px 6px rgba(59, 130, 246, 0.04)',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  {/* Coluna 1: Data e Dia da Semana */}
-                  <div style={{ minWidth: 150, display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 8,
-                      backgroundColor: '#EFF6FF',
-                      border: '1px solid #BFDBFE',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <Calendar size={15} color="#2563EB" />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {tx.dateDisplay}
+                <div key={tx.id} className="tx-card-row">
+                  {/* Linha topo mobile: Data no lado esquerdo, Valor no lado direito */}
+                  <div className="tx-mobile-top">
+                    {/* Coluna 1: Data e Dia da Semana */}
+                    <div className="tx-col-date">
+                      <div style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: 8,
+                        backgroundColor: '#EFF6FF',
+                        border: '1px solid #BFDBFE',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        <Calendar size={14} color="#2563EB" />
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                        {tx.dayOfWeek}
+                      <div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                          {tx.dateDisplay}
+                        </div>
+                        <div style={{ fontSize: '0.725rem', color: 'var(--text-secondary)' }}>
+                          {tx.dayOfWeek}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Coluna 3: Valor Monetário */}
+                    <div className="tx-col-amount">
+                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A' }}>
+                        {formatBRL(tx.amount)}
                       </div>
                     </div>
                   </div>
 
                   {/* Coluna 2: Nome do Estabelecimento + Extrato Original + IA */}
-                  <div style={{ flex: 1, minWidth: 240 }}>
+                  <div className="tx-col-info">
                     {/* Nome do Estabelecimento em Destaque */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                      <Store size={15} color="#2563EB" style={{ flexShrink: 0 }} />
-                      <span style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', letterSpacing: '-0.01em' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Store size={14} color="#2563EB" style={{ flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0F172A', letterSpacing: '-0.01em', wordBreak: 'break-word' }}>
                         {tx.merchantName || extractMerchantName(tx.description)}
                       </span>
                     </div>
 
                     {/* Descrição original do extrato bancário */}
                     <div style={{
-                      fontSize: '0.75rem',
+                      fontSize: '0.725rem',
                       color: '#64748B',
                       marginTop: 3,
                       fontFamily: 'monospace',
@@ -298,55 +298,47 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
                     </div>
 
                     {/* Selo e Raciocínio da IA */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5, flexWrap: 'wrap' }}>
-                      <span className="badge badge-ai" style={{ fontSize: '0.675rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                      <span className="badge badge-ai" style={{ fontSize: '0.65rem', padding: '2px 7px' }}>
                         <Sparkles size={10} /> {tx.aiConfidence}% IA
                       </span>
                       {tx.aiReason && (
-                        <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                           {tx.aiReason}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Coluna 3: Valor Monetário */}
-                  <div style={{ minWidth: 120, textAlign: 'right' }}>
-                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A' }}>
-                      {formatBRL(tx.amount)}
-                    </div>
-                  </div>
-
                   {/* Coluna 4: Ações (Mover Categoria / Excluir) */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ position: 'relative' }}>
-                      <select
-                        value={tx.category}
-                        onChange={(e) => onRecategorize(tx.id, e.target.value as CategoryId, tx.description)}
-                        style={{
-                          backgroundColor: '#F8FAFC',
-                          color: '#334155',
-                          border: '1px solid #CBD5E1',
-                          borderRadius: 'var(--radius-sm)',
-                          padding: '5px 8px',
-                          fontSize: '0.75rem',
-                          cursor: 'pointer',
-                          outline: 'none'
-                        }}
-                        title="Mudar categoria"
-                      >
-                        {Object.values(CATEGORIES).map(c => (
-                          <option key={c.id} value={c.id}>
-                            {c.name.split('&')[0].trim()}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  <div className="tx-col-actions">
+                    <select
+                      value={tx.category}
+                      onChange={(e) => onRecategorize(tx.id, e.target.value as CategoryId, tx.description)}
+                      className="tx-category-select"
+                      style={{
+                        backgroundColor: '#F8FAFC',
+                        color: '#334155',
+                        border: '1px solid #CBD5E1',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '6px 8px',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        outline: 'none'
+                      }}
+                      title="Mudar categoria"
+                    >
+                      {Object.values(CATEGORIES).map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.name.split('&')[0].trim()}
+                        </option>
+                      ))}
+                    </select>
 
                     <button
                       onClick={() => onDeleteTransaction(tx.id)}
                       className="btn btn-secondary btn-sm"
-                      style={{ padding: '6px 8px', color: '#DC2626', backgroundColor: '#FEF2F2', borderColor: '#FECACA' }}
+                      style={{ padding: '6px 8px', color: '#DC2626', backgroundColor: '#FEF2F2', borderColor: '#FECACA', flexShrink: 0 }}
                       title="Excluir este lançamento"
                     >
                       <Trash2 size={13} />
