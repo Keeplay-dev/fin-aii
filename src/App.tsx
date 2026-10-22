@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Transaction, CategoryId, ParsedPDFResult } from './types/finance';
 import type { User } from './types/auth';
 import {
@@ -16,8 +16,7 @@ import {
   updateTransactionCategoryInTiDB
 } from './services/storage';
 import { saveLearnedRule, generateAIInsights, reclassifyAllTransactions } from './services/aiEngine';
-import { getMockTransactions } from './services/mockData';
-import { getStoredUser, clearUserSession } from './services/authService';
+import { getStoredUser, clearUserSession, saveUserSession } from './services/authService';
 
 import { Header } from './components/Header';
 import { SalaryCard } from './components/SalaryCard';
@@ -30,32 +29,27 @@ import { PDFReportModal } from './components/PDFReportModal';
 import { LoginScreen } from './components/LoginScreen';
 
 export const App: React.FC = () => {
-  const [salary, setSalary] = useState<number>(() => loadStoredSalary());
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const stored = loadStoredTransactions();
-    // Se o cache tiver dados do mock anterior com nomes artificiais, substitui pelas transações da fatura real
-    const hasOldMockNames = stored && stored.some(t =>
-      t.id.startsWith('mock_') ||
-      t.description.includes('PAO DE ACUCAR') ||
-      t.description.includes('HABITACAO CAIXA')
-    );
+  const [currentUser, setCurrentUser] = useState<User | null>(() => getStoredUser());
 
-    if (!stored || stored.length === 0 || hasOldMockNames) {
-      const realSamples = getMockTransactions();
-      saveStoredTransactions(realSamples);
-      return realSamples;
-    }
-    return reclassifyAllTransactions(stored);
+  const [salary, setSalary] = useState<number>(() => {
+    const user = getStoredUser();
+    if (user?.salary && user.salary > 0) return user.salary;
+    return loadStoredSalary(user?.id);
   });
 
-  const [currentUser, setCurrentUser] = useState<User | null>(() => getStoredUser());
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    const user = getStoredUser();
+    const stored = loadStoredTransactions(user?.id);
+    if (stored && stored.length > 0) {
+      return reclassifyAllTransactions(stored);
+    }
+    return [];
+  });
+
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [isPDFModalOpen, setIsPDFModalOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
-
-  // Flag para evitar que atualizações recebidas da nuvem sejam reenviadas em loop
-  const isRemoteUpdateRef = useRef<boolean>(false);
 
   const handleLogout = () => {
     clearUserSession();
@@ -74,18 +68,19 @@ export const App: React.FC = () => {
       ]);
 
       if (remoteTx !== null) {
-        setTransactions(prev => {
-          // Só atualiza o estado se houver diferença real para não disparar re-render à toa
-          if (JSON.stringify(prev) !== JSON.stringify(remoteTx)) {
-            isRemoteUpdateRef.current = true;
-            return remoteTx;
-          }
-          return prev;
-        });
+        setTransactions(remoteTx);
+        saveStoredTransactions(remoteTx, currentUser.id);
       }
 
-      if (typeof remoteSalary === 'number') {
-        setSalary(prev => (prev !== remoteSalary ? remoteSalary : prev));
+      if (typeof remoteSalary === 'number' && remoteSalary > 0) {
+        setSalary(remoteSalary);
+        saveStoredSalary(remoteSalary, currentUser.id);
+        setCurrentUser(prev => {
+          if (!prev) return null;
+          const updated = { ...prev, salary: remoteSalary };
+          saveUserSession(updated);
+          return updated;
+        });
       }
 
       setLastSyncTime(new Date());
@@ -101,9 +96,6 @@ export const App: React.FC = () => {
   // Carregar dados remotos do TiDB quando o usuário estiver logado
   useEffect(() => {
     if (currentUser?.id) {
-      if (currentUser.salary) {
-        setSalary(currentUser.salary);
-      }
       refreshData(false);
     }
   }, [currentUser?.id]);
@@ -137,31 +129,25 @@ export const App: React.FC = () => {
     };
   }, [currentUser?.id]);
 
-  // Sincronizar salário com o localStorage e TiDB
+  // Sincronizar salário com o localStorage, Sessão e TiDB
   const handleUpdateSalary = (newSalary: number) => {
     setSalary(newSalary);
-    saveStoredSalary(newSalary);
-    if (currentUser?.id) {
-      syncSalaryWithTiDB(currentUser.id, newSalary);
+    saveStoredSalary(newSalary, currentUser?.id);
+    if (currentUser) {
+      const updatedUser = { ...currentUser, salary: newSalary };
+      setCurrentUser(updatedUser);
+      saveUserSession(updatedUser);
+      if (currentUser.id) {
+        syncSalaryWithTiDB(currentUser.id, newSalary);
+      }
     }
   };
-
-  // Sincronizar transações locais com o localStorage e TiDB Cloud
-  useEffect(() => {
-    if (isRemoteUpdateRef.current) {
-      isRemoteUpdateRef.current = false;
-      return;
-    }
-    saveStoredTransactions(transactions);
-    if (currentUser?.id && transactions.length > 0) {
-      syncTransactionsWithTiDB(currentUser.id, transactions);
-    }
-  }, [transactions, currentUser?.id]);
 
   // Limpar todos os dados
   const handleClearData = () => {
     if (window.confirm('Tem certeza de que deseja limpar todos os lançamentos carregados?')) {
       setTransactions([]);
+      saveStoredTransactions([], currentUser?.id);
       if (currentUser?.id) {
         clearAllTransactionsFromTiDB(currentUser.id);
       }
@@ -172,6 +158,7 @@ export const App: React.FC = () => {
   const handlePDFParsed = (result: ParsedPDFResult) => {
     setTransactions(prev => {
       const updated = [...result.transactions, ...prev];
+      saveStoredTransactions(updated, currentUser?.id);
       if (currentUser?.id) {
         syncTransactionsWithTiDB(currentUser.id, result.transactions);
       }
@@ -181,20 +168,22 @@ export const App: React.FC = () => {
 
   // Recategorizar uma transação
   const handleRecategorize = (transactionId: string, newCategory: CategoryId, description: string) => {
-    setTransactions(prev =>
-      prev.map(t => {
+    setTransactions(prev => {
+      const updated = prev.map(t => {
         if (t.id === transactionId) {
           return {
             ...t,
             category: newCategory,
-            aiSource: 'learned',
+            aiSource: 'learned' as const,
             aiConfidence: 100,
             aiReason: 'Atualizado manualmente por você'
           };
         }
         return t;
-      })
-    );
+      });
+      saveStoredTransactions(updated, currentUser?.id);
+      return updated;
+    });
 
     // Salva regra de aprendizado local
     saveLearnedRule(description, newCategory);
@@ -207,7 +196,11 @@ export const App: React.FC = () => {
 
   // Excluir uma transação
   const handleDeleteTransaction = (transactionId: string) => {
-    setTransactions(prev => prev.filter(t => t.id !== transactionId));
+    setTransactions(prev => {
+      const updated = prev.filter(t => t.id !== transactionId);
+      saveStoredTransactions(updated, currentUser?.id);
+      return updated;
+    });
     if (currentUser?.id) {
       deleteTransactionFromTiDB(currentUser.id, transactionId);
     }
@@ -215,7 +208,14 @@ export const App: React.FC = () => {
 
   // Adicionar transação manual
   const handleAddTransaction = (newTx: Transaction) => {
-    setTransactions(prev => [newTx, ...prev]);
+    setTransactions(prev => {
+      const updated = [newTx, ...prev];
+      saveStoredTransactions(updated, currentUser?.id);
+      if (currentUser?.id) {
+        syncTransactionsWithTiDB(currentUser.id, [newTx]);
+      }
+      return updated;
+    });
   };
 
   // Métricas calculadas em tempo real

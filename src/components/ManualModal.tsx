@@ -77,12 +77,15 @@ export const ManualModal: React.FC<ManualModalProps> = ({ isOpen, onClose, onAdd
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 100,
-      padding: 16
+      padding: 16,
+      overflowY: 'auto'
     }}>
       <div className="glass-panel animate-fade-in" style={{
         maxWidth: 480,
         width: '100%',
-        padding: 24,
+        maxHeight: '92vh',
+        overflowY: 'auto',
+        padding: 'clamp(18px, 4vw, 24px)',
         position: 'relative',
         backgroundColor: '#FFFFFF',
         borderColor: 'var(--border-pastel-blue)'

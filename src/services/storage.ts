@@ -4,34 +4,57 @@ import { CATEGORY_LIST } from './categories';
 const SALARY_KEY = 'finai_salary_v1';
 const TRANSACTIONS_KEY = 'finai_transactions_v1';
 
-export function loadStoredSalary(): number {
+export function loadStoredSalary(userId?: number): number {
   try {
-    const raw = localStorage.getItem(SALARY_KEY);
-    return raw ? parseFloat(raw) : 6500; // Salário padrão inicial de R$ 6.500 para exibição imediata
+    if (userId) {
+      const userKey = `${SALARY_KEY}_u${userId}`;
+      const rawUser = localStorage.getItem(userKey);
+      if (rawUser) return parseFloat(rawUser);
+    }
+    const rawGlobal = localStorage.getItem(SALARY_KEY);
+    return rawGlobal ? parseFloat(rawGlobal) : 6500;
   } catch {
     return 6500;
   }
 }
 
-export function saveStoredSalary(salary: number): void {
+export function saveStoredSalary(salary: number, userId?: number): void {
   try {
+    if (userId) {
+      localStorage.setItem(`${SALARY_KEY}_u${userId}`, String(salary));
+    }
     localStorage.setItem(SALARY_KEY, String(salary));
   } catch (e) {
     console.error('Erro ao salvar salário:', e);
   }
 }
 
-export function loadStoredTransactions(): Transaction[] {
+export function loadStoredTransactions(userId?: number): Transaction[] {
   try {
-    const raw = localStorage.getItem(TRANSACTIONS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (userId) {
+      const userKey = `${TRANSACTIONS_KEY}_u${userId}`;
+      const rawUser = localStorage.getItem(userKey);
+      if (rawUser) {
+        const parsed = JSON.parse(rawUser);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    }
+    const rawGlobal = localStorage.getItem(TRANSACTIONS_KEY);
+    if (rawGlobal) {
+      const parsed = JSON.parse(rawGlobal);
+      if (Array.isArray(parsed)) return parsed;
+    }
+    return [];
   } catch {
     return [];
   }
 }
 
-export function saveStoredTransactions(transactions: Transaction[]): void {
+export function saveStoredTransactions(transactions: Transaction[], userId?: number): void {
   try {
+    if (userId) {
+      localStorage.setItem(`${TRANSACTIONS_KEY}_u${userId}`, JSON.stringify(transactions));
+    }
     localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
   } catch (e) {
     console.error('Erro ao salvar transações:', e);
@@ -61,7 +84,7 @@ export async function fetchUserTransactionsFromTiDB(userId: number): Promise<Tra
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data)) {
-        saveStoredTransactions(data);
+        saveStoredTransactions(data, userId);
         return data;
       }
     }
@@ -136,7 +159,7 @@ export async function fetchUserSalaryFromTiDB(userId: number): Promise<number | 
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data.salary === 'number') {
-        saveStoredSalary(data.salary);
+        saveStoredSalary(data.salary, userId);
         return data.salary;
       }
     }

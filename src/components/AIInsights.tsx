@@ -40,7 +40,7 @@ export const AIInsights: React.FC<AIInsightsProps> = ({ insights }) => {
       {/* Grid de Cards de Insights */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
         gap: 14
       }}>
         {insights.map((insight) => {

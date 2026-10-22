@@ -100,13 +100,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   return (
     <div style={{
       minHeight: '100vh',
+      minHeight: '100dvh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '24px 16px',
+      padding: '24px 14px',
       background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 50%, #0F172A 100%)',
       position: 'relative',
-      overflow: 'hidden'
+      overflowX: 'hidden',
+      overflowY: 'auto'
     }}>
       {/* Elementos visuais de fundo brilhantes (Glowing Orbs) */}
       <div style={{
@@ -136,10 +138,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
       <div style={{
         maxWidth: 480,
         width: '100%',
+        margin: 'auto',
         backgroundColor: 'rgba(255, 255, 255, 0.98)',
         borderRadius: 20,
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.2)',
-        padding: '36px 32px',
+        padding: 'clamp(24px, 5vw, 36px) clamp(16px, 5vw, 32px)',
         position: 'relative',
         zIndex: 10,
         backdropFilter: 'blur(20px)'
