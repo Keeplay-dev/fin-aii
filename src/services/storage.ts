@@ -38,7 +38,14 @@ export function saveStoredTransactions(transactions: Transaction[]): void {
   }
 }
 
+// Funções de compatibilidade para evitar quebras de build caso o arquivo antigo exista no GitHub
+export function loadGeminiKey(): string {
+  return '';
+}
 
+export function saveGeminiKey(_key?: string): void {
+  // Descontinuado
+}
 
 // Calcular todas as métricas financeiras consolidadas
 export function calculateFinancialMetrics(salary: number, transactions: Transaction[]): FinancialMetrics {
