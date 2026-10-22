@@ -26,11 +26,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Validação dinâmica da senha
   const passValidation = validatePassword(password);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -48,13 +49,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
         return;
       }
 
-      const res = registerAccount(name, username, password);
-      if (!res.success) {
-        setErrorMessage(res.message || 'Erro ao realizar cadastro.');
-        return;
-      }
-      if (res.user) {
-        onLoginSuccess(res.user);
+      setIsLoading(true);
+      try {
+        const res = await registerAccount(name, username, password);
+        if (!res.success) {
+          setErrorMessage(res.message || 'Erro ao realizar cadastro.');
+        } else if (res.user) {
+          onLoginSuccess(res.user);
+        }
+      } catch (err: any) {
+        setErrorMessage(err?.message || 'Erro ao conectar ao banco de dados.');
+      } finally {
+        setIsLoading(false);
       }
     } else {
       // Modo login
@@ -67,13 +73,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
         return;
       }
 
-      const res = loginAccount(username, password);
-      if (!res.success) {
-        setErrorMessage(res.message || 'Credenciais inválidas.');
-        return;
-      }
-      if (res.user) {
-        onLoginSuccess(res.user);
+      setIsLoading(true);
+      try {
+        const res = await loginAccount(username, password);
+        if (!res.success) {
+          setErrorMessage(res.message || 'Credenciais inválidas.');
+        } else if (res.user) {
+          onLoginSuccess(res.user);
+        }
+      } catch (err: any) {
+        setErrorMessage(err?.message || 'Erro ao autenticar.');
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -458,6 +469,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           {/* Botão de Envio */}
           <button
             type="submit"
+            disabled={isLoading}
             className="btn btn-primary"
             style={{
               width: '100%',
@@ -470,11 +482,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               gap: 8,
               borderRadius: 10,
               boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
-              marginTop: 4
+              marginTop: 4,
+              opacity: isLoading ? 0.7 : 1,
+              cursor: isLoading ? 'not-allowed' : 'pointer'
             }}
           >
-            <span>{mode === 'register' ? 'Criar Conta e Acessar' : 'Entrar no FinAI'}</span>
-            <ArrowRight size={18} />
+            {isLoading ? (
+              <span>Conectando ao TiDB...</span>
+            ) : (
+              <>
+                <span>{mode === 'register' ? 'Criar Conta e Acessar' : 'Entrar no FinAI'}</span>
+                <ArrowRight size={18} />
+              </>
+            )}
           </button>
         </form>
 

@@ -38,6 +38,68 @@ export function saveStoredTransactions(transactions: Transaction[]): void {
   }
 }
 
+// Sincronização assíncrona com o TiDB Cloud
+export async function syncTransactionsWithTiDB(userId: number, transactions: Transaction[]): Promise<void> {
+  if (!userId || transactions.length === 0) return;
+  try {
+    await fetch('/api/transactions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, transactions })
+    });
+  } catch (e) {
+    console.warn('Sincronização TiDB temporariamente offline:', e);
+  }
+}
+
+export async function fetchUserTransactionsFromTiDB(userId: number): Promise<Transaction[] | null> {
+  if (!userId) return null;
+  try {
+    const res = await fetch(`/api/transactions?userId=${userId}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        saveStoredTransactions(data);
+        return data;
+      }
+    }
+  } catch (e) {
+    console.warn('Não foi possível carregar do TiDB remoto:', e);
+  }
+  return null;
+}
+
+export async function deleteTransactionFromTiDB(userId: number, transactionId: string): Promise<void> {
+  if (!userId || !transactionId) return;
+  try {
+    await fetch(`/api/transactions?userId=${userId}&id=${transactionId}`, { method: 'DELETE' });
+  } catch (e) {
+    console.warn('Falha ao excluir no TiDB:', e);
+  }
+}
+
+export async function clearAllTransactionsFromTiDB(userId: number): Promise<void> {
+  if (!userId) return;
+  try {
+    await fetch(`/api/transactions?userId=${userId}&all=true`, { method: 'DELETE' });
+  } catch (e) {
+    console.warn('Falha ao limpar transações no TiDB:', e);
+  }
+}
+
+export async function syncSalaryWithTiDB(userId: number, salary: number): Promise<void> {
+  if (!userId) return;
+  try {
+    await fetch('/api/salary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, salary })
+    });
+  } catch (e) {
+    console.warn('Falha ao sincronizar salário no TiDB:', e);
+  }
+}
+
 // Funções de compatibilidade para evitar quebras de build caso o arquivo antigo exista no GitHub
 export function loadGeminiKey(): string {
   return '';

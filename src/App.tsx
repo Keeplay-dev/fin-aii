@@ -6,7 +6,12 @@ import {
   saveStoredSalary,
   loadStoredTransactions,
   saveStoredTransactions,
-  calculateFinancialMetrics
+  calculateFinancialMetrics,
+  syncTransactionsWithTiDB,
+  fetchUserTransactionsFromTiDB,
+  deleteTransactionFromTiDB,
+  clearAllTransactionsFromTiDB,
+  syncSalaryWithTiDB
 } from './services/storage';
 import { saveLearnedRule, generateAIInsights, reclassifyAllTransactions } from './services/aiEngine';
 import { getMockTransactions } from './services/mockData';
@@ -50,27 +55,56 @@ export const App: React.FC = () => {
     setCurrentUser(null);
   };
 
-  // Sincronizar salário com o localStorage
+  // Carregar dados remotos do TiDB quando o usuário estiver logado
+  useEffect(() => {
+    if (currentUser?.id) {
+      if (currentUser.salary) {
+        setSalary(currentUser.salary);
+      }
+      fetchUserTransactionsFromTiDB(currentUser.id).then(remoteTx => {
+        if (remoteTx && remoteTx.length > 0) {
+          setTransactions(remoteTx);
+        }
+      });
+    }
+  }, [currentUser?.id]);
+
+  // Sincronizar salário com o localStorage e TiDB
   const handleUpdateSalary = (newSalary: number) => {
     setSalary(newSalary);
     saveStoredSalary(newSalary);
+    if (currentUser?.id) {
+      syncSalaryWithTiDB(currentUser.id, newSalary);
+    }
   };
 
-  // Sincronizar transações com o localStorage sempre que mudarem
+  // Sincronizar transações com o localStorage e TiDB Cloud
   useEffect(() => {
     saveStoredTransactions(transactions);
-  }, [transactions]);
+    if (currentUser?.id && transactions.length > 0) {
+      syncTransactionsWithTiDB(currentUser.id, transactions);
+    }
+  }, [transactions, currentUser?.id]);
 
   // Limpar todos os dados
   const handleClearData = () => {
     if (window.confirm('Tem certeza de que deseja limpar todos os lançamentos carregados?')) {
       setTransactions([]);
+      if (currentUser?.id) {
+        clearAllTransactionsFromTiDB(currentUser.id);
+      }
     }
   };
 
   // Ao receber dados de um PDF ou texto processado
   const handlePDFParsed = (result: ParsedPDFResult) => {
-    setTransactions(prev => [...result.transactions, ...prev]);
+    setTransactions(prev => {
+      const updated = [...result.transactions, ...prev];
+      if (currentUser?.id) {
+        syncTransactionsWithTiDB(currentUser.id, result.transactions);
+      }
+      return updated;
+    });
   };
 
   // Recategorizar uma transação
@@ -97,6 +131,9 @@ export const App: React.FC = () => {
   // Excluir uma transação
   const handleDeleteTransaction = (transactionId: string) => {
     setTransactions(prev => prev.filter(t => t.id !== transactionId));
+    if (currentUser?.id) {
+      deleteTransactionFromTiDB(currentUser.id, transactionId);
+    }
   };
 
   // Adicionar transação manual

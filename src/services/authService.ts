@@ -93,8 +93,8 @@ export interface AuthResult {
   user?: User;
 }
 
-// Registrar novo usuário
-export function registerAccount(name: string, username: string, password: string): AuthResult {
+// Registrar novo usuário com sincronização TiDB Cloud
+export async function registerAccount(name: string, username: string, password: string): Promise<AuthResult> {
   const cleanName = name.trim();
   const cleanUsername = username.trim().toLowerCase();
 
@@ -114,6 +114,29 @@ export function registerAccount(name: string, username: string, password: string
     };
   }
 
+  // 1. Tentar salvar no TiDB Cloud via API
+  try {
+    const res = await fetch('/api/auth?action=register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: cleanName, username: cleanUsername, password })
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (res.ok && data?.user) {
+      saveUserSession(data.user);
+      return { success: true, user: data.user };
+    }
+
+    if (data?.message) {
+      return { success: false, message: data.message };
+    }
+  } catch (err) {
+    console.warn('API TiDB offline ou ambiente local sem rotas serverless, usando fallback local:', err);
+  }
+
+  // 2. Fallback de persistência local
   const accounts = getStoredAccounts();
   const exists = accounts.some(acc => acc.username.toLowerCase() === cleanUsername);
   if (exists) {
@@ -123,7 +146,7 @@ export function registerAccount(name: string, username: string, password: string
   const newAccount: StoredAccount = {
     name: cleanName,
     username: cleanUsername,
-    passwordHash: password, // Armazenamento local protegido no navegador
+    passwordHash: password,
     createdAt: new Date().toISOString()
   };
 
@@ -131,6 +154,7 @@ export function registerAccount(name: string, username: string, password: string
   saveStoredAccounts(accounts);
 
   const user: User = {
+    id: Date.now(),
     name: cleanName,
     username: cleanUsername,
     createdAt: newAccount.createdAt
@@ -140,8 +164,8 @@ export function registerAccount(name: string, username: string, password: string
   return { success: true, user };
 }
 
-// Fazer login com usuário ou nome e senha
-export function loginAccount(usernameOrName: string, password: string): AuthResult {
+// Fazer login com usuário ou nome e senha com sincronização TiDB Cloud
+export async function loginAccount(usernameOrName: string, password: string): Promise<AuthResult> {
   const cleanQuery = usernameOrName.trim().toLowerCase();
 
   if (!cleanQuery) {
@@ -152,6 +176,29 @@ export function loginAccount(usernameOrName: string, password: string): AuthResu
     return { success: false, message: 'Por favor, digite sua senha.' };
   }
 
+  // 1. Tentar autenticar via TiDB Cloud API
+  try {
+    const res = await fetch('/api/auth?action=login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: cleanQuery, password })
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (res.ok && data?.user) {
+      saveUserSession(data.user);
+      return { success: true, user: data.user };
+    }
+
+    if (data?.message) {
+      return { success: false, message: data.message };
+    }
+  } catch (err) {
+    console.warn('API TiDB offline ou ambiente local sem rotas serverless, usando fallback local:', err);
+  }
+
+  // 2. Fallback de persistência local
   const accounts = getStoredAccounts();
   const match = accounts.find(
     acc => acc.username.toLowerCase() === cleanQuery || acc.name.toLowerCase() === cleanQuery
@@ -169,6 +216,7 @@ export function loginAccount(usernameOrName: string, password: string): AuthResu
   }
 
   const user: User = {
+    id: 1,
     name: match.name,
     username: match.username,
     createdAt: match.createdAt

@@ -1,6 +1,8 @@
 export interface User {
+  id?: number;
   name: string;
   username: string;
+  salary?: number;
   createdAt: string;
 }
 
